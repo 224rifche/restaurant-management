@@ -1,0 +1,54 @@
+# ===========================
+# DJANGO CORE
+# ===========================
+Django==4.2.11
+# Django est le framework web principal
+# 4.2 est la version LTS (Long Term Support) - supportée jusqu'en 2026
+# On fixe la version exacte pour que tout le monde ait le même comportement
+
+djangorestframework==3.15.1
+# DRF = Django REST Framework
+# C'est lui qui transforme Django en API REST
+# Il gère la serialisation, les endpoints, les permissions
+
+# ===========================
+# BASE DE DONNÉES
+# ===========================
+mysqlclient==2.2.4
+# Le connecteur Python <-> MySQL
+# Permet à Django de parler à MySQL
+
+# ===========================
+# AUTHENTIFICATION
+# ===========================
+djangorestframework-simplejwt==5.3.1
+# Gère les tokens JWT (JSON Web Token)
+# C'est le système de connexion : login → token → accès API
+
+# ===========================
+# SÉCURITÉ
+# ===========================
+django-cors-headers==4.3.1
+# CORS = Cross-Origin Resource Sharing
+# Permet au frontend (localhost:3000) d'appeler l'API (localhost:8000)
+# Sans ça, le navigateur bloque les requêtes entre domaines différents
+
+# ===========================
+# VARIABLES D'ENVIRONNEMENT
+# ===========================
+python-decouple==3.8
+# Lit les variables depuis le fichier .env
+# Evite d'écrire les mots de passe directement dans le code
+
+# ===========================
+# MONITORING (LGTM)
+# ===========================
+django-prometheus==2.3.1
+# Exporte des métriques Django vers Prometheus/Mimir
+# Grafana les affichera ensuite en graphiques
+
+opentelemetry-sdk==1.24.0
+opentelemetry-instrumentation-django==0.45b0
+opentelemetry-exporter-otlp==1.24.0
+# OpenTelemetry = standard de tracing
+# Tempo collectera ces traces pour voir le chemin de chaque requête
