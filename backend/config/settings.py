@@ -49,6 +49,8 @@ INSTALLED_APPS = [
     # Bibliotheques tierces
     'rest_framework',              # Django REST Framework - notre API
     'corsheaders',                 # Gestion CORS (frontend <-> backend)
+    'drf_spectacular',             # Documentation OpenAPI
+    'django_filters',              # Filtrage API
 
     # Nos apps metier
     'apps.users',                  # Gestion des comptes utilisateurs
@@ -160,6 +162,20 @@ REST_FRAMEWORK = {
     # Evite de renvoyer 10000 lignes d'un coup
 
     # ===========================
+    # DOCUMENTATION
+    # ===========================
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+
+    # ===========================
+    # FILTRAGE
+    # ===========================
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ),
+
+    # ===========================
     # SECURITE (THROTTLING)
     # ===========================
     'DEFAULT_THROTTLE_CLASSES': [
@@ -197,6 +213,17 @@ SIMPLE_JWT = {
 
     'AUTH_HEADER_TYPES': ('Bearer',),
     # Format du header : Authorization: Bearer eyJ0...
+}
+
+# ===========================
+# SPECTACULAR SETTINGS
+# ===========================
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Restaurant Management API',
+    'DESCRIPTION': 'API pour la gestion d\'un restaurant (Employés, Pointage, Planning)',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
 }
 
 # ===========================

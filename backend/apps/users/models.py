@@ -1,3 +1,4 @@
+import uuid
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 
@@ -27,13 +28,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         ('serveur', 'Serveur'),
     ]
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     nom = models.CharField(max_length=100)
     telephone = models.CharField(max_length=20, unique=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='serveur')
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    date_creation = models.DateTimeField(auto_now_add=True)
-    date_modification = models.DateTimeField(auto_now=True)
+    inserted_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     objects = UserManager()
 
@@ -44,6 +46,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         db_table = 'users'
         verbose_name = 'Utilisateur'
         verbose_name_plural = 'Utilisateurs'
+        ordering = ['-inserted_at']
+
+    class JSONAPIMeta:
+        resource_name = "users"
 
     def __str__(self):
         return f"{self.nom} ({self.role})"

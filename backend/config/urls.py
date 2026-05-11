@@ -35,6 +35,11 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenVerifyView,
 )
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularRedocView,
+    SpectacularSwaggerView,
+)
 # Ces trois vues sont fournies DIRECTEMENT par simplejwt
 # On n'a pas besoin de les créer nous-mêmes !
 #
@@ -133,5 +138,12 @@ urlpatterns = [
     path('api/', include('apps.users.urls')),
     # C'est ici que l'on connecte nos propres modules métier.
     # Pour toute URL commençant par /api/, on passe le relais à apps/users/urls.py
+
+    # ---------------------------
+    # DOCUMENTATION API
+    # ---------------------------
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
 

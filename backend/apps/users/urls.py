@@ -25,7 +25,7 @@ from .views import UserViewSet
 # ===========================
 # CRÉATION DU ROUTER
 # ===========================
-router = DefaultRouter()
+router = DefaultRouter(trailing_slash=False)
 # On instancie le router
 # C'est lui qui va gérer toute la génération d'URLs
 

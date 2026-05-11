@@ -16,7 +16,7 @@ class UserAdmin(BaseUserAdmin):
     """
 
     # Ce qu'on voit dans le tableau de liste /admin/users/user/
-    list_display = ('telephone', 'nom', 'role', 'is_active', 'date_creation')
+    list_display = ('telephone', 'nom', 'role', 'is_active', 'inserted_at')
 
     # Filtres cliquables sur la droite
     list_filter = ('role', 'is_active')
@@ -25,7 +25,7 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ('telephone', 'nom')
 
     # Tri par défaut : plus récent en premier
-    ordering = ('-date_creation',)
+    ordering = ('-inserted_at',)
 
     # ===========================
     # FORMULAIRE DE MODIFICATION
@@ -44,7 +44,7 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('is_active', 'is_staff', 'is_superuser')
         }),
         ('Dates', {
-            'fields': ('date_creation', 'date_modification'),
+            'fields': ('inserted_at', 'updated_at'),
             'classes': ('collapse',)
             # 'collapse' = section repliée par défaut
             # L'utilisateur peut l'ouvrir en cliquant
@@ -52,7 +52,7 @@ class UserAdmin(BaseUserAdmin):
     )
 
     # Ces champs sont auto-remplis par Django → lecture seule
-    readonly_fields = ('date_creation', 'date_modification')
+    readonly_fields = ('inserted_at', 'updated_at')
 
     # ===========================
     # FORMULAIRE DE CRÉATION
