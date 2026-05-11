@@ -251,6 +251,9 @@ class Employee(models.Model):
             # Ex: "donne-moi tous les serveurs"
         ]
     
+    class JSONAPIMeta:
+        resource_name = "employees"
+
     # ===========================
     # MÉTHODES DU MODÈLE
     # ===========================

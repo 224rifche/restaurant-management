@@ -11,6 +11,9 @@ from .models import Employee, POSTE_CHOICES, STATUT_CHOICES
 
 # pyrefly: ignore [missing-import]
 from apps.users.models import User
+from drf_spectacular.utils import extend_schema_field
+# pyrefly: ignore [missing-import]
+from apps.users.api_base import BaseModelSerializerV1, BaseWriteSerializer
 # On importe le modèle ET les listes de choix
 # Les listes de choix servent à valider les données entrantes
 
@@ -37,7 +40,7 @@ from apps.users.models import User
 # ===================================================
 # SERIALIZER 1 : LECTURE — Affichage d'un employé
 # ===================================================
-class EmployeeReadSerializer(serializers.ModelSerializer):
+class EmployeeReadSerializer(BaseModelSerializerV1):
     """
     Utilisé pour les réponses GET.
     Affiche toutes les informations utiles d'un employé,
@@ -51,20 +54,45 @@ class EmployeeReadSerializer(serializers.ModelSerializer):
     # On les calcule via une méthode Python
     # DRF appelle automatiquement la méthode "get_NOM_DU_CHAMP"
     
+    @extend_schema_field(serializers.CharField())
+    def get_nom(self, obj):
+        # obj = l'Employee dont on génère le JSON
+        # obj.user = le User associé via OneToOneField
+        # obj.user.nom = le nom de cet utilisateur
+        return obj.user.nom
+
     nom = serializers.SerializerMethodField()
     # Appelle automatiquement la méthode get_nom() ci-dessous
     # Affiche le nom de l'employé (qui vient du User, pas d'Employee)
     
+    @extend_schema_field(serializers.CharField())
+    def get_telephone(self, obj):
+        return obj.user.telephone
+
     telephone = serializers.SerializerMethodField()
     # Affiche le téléphone (qui vient du User)
     
+    @extend_schema_field(serializers.CharField())
+    def get_role(self, obj):
+        return obj.user.role
+
     role = serializers.SerializerMethodField()
     # Affiche le rôle du User
     
+    @extend_schema_field(serializers.CharField())
+    def get_poste_label(self, obj):
+        # get_poste_display() = méthode Django auto pour les choices
+        # Retourne le label ("Serveur / Serveuse") au lieu de la valeur ("serveur")
+        return obj.get_poste_display()
+
     poste_label = serializers.SerializerMethodField()
     # Affiche "Serveur / Serveuse" au lieu de "serveur"
     # Plus lisible pour le frontend
     
+    @extend_schema_field(serializers.CharField())
+    def get_statut_label(self, obj):
+        return obj.get_statut_display()
+
     statut_label = serializers.SerializerMethodField()
     # Affiche "Actif" au lieu de "actif"
     
@@ -93,38 +121,12 @@ class EmployeeReadSerializer(serializers.ModelSerializer):
         # Ce serializer ne JAMAIS utilisé pour écrire des données
         # C'est une protection supplémentaire
     
-    # ===========================
-    # MÉTHODES "get_" pour les SerializerMethodField
-    # ===========================
-    # Règle : pour un champ "nom = SerializerMethodField()"
-    # DRF cherche AUTOMATIQUEMENT une méthode "get_nom(self, obj)"
-    # "obj" = l'instance Employee en cours de sérialisation
-    
-    def get_nom(self, obj):
-        # obj = l'Employee dont on génère le JSON
-        # obj.user = le User associé via OneToOneField
-        # obj.user.nom = le nom de cet utilisateur
-        return obj.user.nom
-    
-    def get_telephone(self, obj):
-        return obj.user.telephone
-    
-    def get_role(self, obj):
-        return obj.user.role
-    
-    def get_poste_label(self, obj):
-        # get_poste_display() = méthode Django auto pour les choices
-        # Retourne le label ("Serveur / Serveuse") au lieu de la valeur ("serveur")
-        return obj.get_poste_display()
-    
-    def get_statut_label(self, obj):
-        return obj.get_statut_display()
 
 
 # ===================================================
 # SERIALIZER 2 : CRÉATION — Créer un nouvel employé
 # ===================================================
-class EmployeeCreateSerializer(serializers.ModelSerializer):
+class EmployeeCreateSerializer(BaseWriteSerializer):
     """
     Utilisé pour les requêtes POST /api/employees/
     
@@ -304,7 +306,7 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
 # ===================================================
 # SERIALIZER 3 : MODIFICATION — Modifier un employé
 # ===================================================
-class EmployeeUpdateSerializer(serializers.ModelSerializer):
+class EmployeeUpdateSerializer(BaseWriteSerializer):
     """
     Utilisé pour les requêtes PUT et PATCH.
     
@@ -450,8 +452,10 @@ class EmployeeListSimpleSerializer(serializers.ModelSerializer):
         model = Employee
         fields = ('id', 'nom', 'poste', 'poste_label', 'statut')
     
+    @extend_schema_field(serializers.CharField())
     def get_nom(self, obj):
         return obj.user.nom
     
+    @extend_schema_field(serializers.CharField())
     def get_poste_label(self, obj):
         return obj.get_poste_display()

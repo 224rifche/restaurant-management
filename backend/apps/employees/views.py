@@ -78,6 +78,8 @@ class IsAdminOnly(permissions.BasePermission):
         )
 
 
+from .filters import EmployeeFilter
+
 # ===========================
 # VIEWSET PRINCIPAL
 # ===========================
@@ -89,11 +91,6 @@ class IsAdminOnly(permissions.BasePermission):
         tags=["Employés"],
         summary="Liste tous les employés",
         description="Retourne la liste de tous les employés. Filtrable par poste et statut.",
-        parameters=[
-            OpenApiParameter(name='poste', description='Filtrer par poste', required=False, type=str),
-            OpenApiParameter(name='statut', description='Filtrer par statut', required=False, type=str),
-            OpenApiParameter(name='search', description='Rechercher par nom ou téléphone', required=False, type=str),
-        ]
     ),
     retrieve=extend_schema(tags=["Employés"], summary="Détail d'un employé"),
     create=extend_schema(tags=["Employés"], summary="Créer un nouvel employé"),
@@ -118,20 +115,17 @@ class EmployeeViewSet(BaseViewSet):
     On override certaines pour personnaliser le comportement.
     """
     
-    queryset = Employee.objects.all().select_related('user')
-    # .select_related('user') : OPTIMISATION CRITIQUE !
-    #
-    # Sans select_related :
-    # - Django charge les 50 employés → 50 requêtes SQL
-    # - Pour chaque employee.user.nom → 1 requête SQL
-    # - Total : 50 + 50 = 100 requêtes ! C'est le problème N+1
-    #
-    # Avec select_related('user') :
-    # - Django fait UN SEUL JOIN SQL : SELECT * FROM employees JOIN users
-    # - Total : 1 requête pour tout → 100x plus rapide !
-    #
-    # select_related = pour les relations ForeignKey et OneToOneField (une seule ligne liée)
-    # prefetch_related = pour les relations ManyToMany (plusieurs lignes liées)
+    def get_queryset(self):
+        """
+        Optimisation critique : select_related('user') pour éviter le N+1.
+        Gestion de swagger_fake_view pour la documentation automatique.
+        """
+        # REQUIRED pour drf-spectacular : évite de faire des requêtes réelles
+        # lors de la génération du schéma OpenAPI
+        if getattr(self, "swagger_fake_view", False):
+            return Employee.objects.none()
+
+        return Employee.objects.all().select_related('user').order_by('-inserted_at')
     
     # ===========================
     # FILTRAGE ET RECHERCHE
@@ -149,9 +143,8 @@ class EmployeeViewSet(BaseViewSet):
         # Cherche dans les champs définis dans ordering_fields
     ]
     
-    filterset_fields = ['poste', 'statut']
-    # Ces champs supportent le filtre exact via URL params
-    # Ex: GET /api/employees/?poste=serveur&statut=actif
+    filterset_class = EmployeeFilter
+    # Utilisation de notre classe de filtre personnalisée (recommandé par le skill)
     
     search_fields = ['user__nom', 'user__telephone']
     # search_fields : champs dans lesquels SearchFilter cherche
