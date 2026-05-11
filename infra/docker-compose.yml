@@ -1,0 +1,134 @@
+# Version du format docker-compose
+# La version 3.8 est stable et compatible avec notre Docker Compose v2
+version: '3.8'
+
+# ===========================
+# SERVICES
+# Chaque service = un container
+# ===========================
+services:
+
+  # ---------------------------
+  # SERVICE 1 : Base de données
+  # On le définit EN PREMIER car backend en dépend
+  # ---------------------------
+  db:
+    image: mysql:8.0
+    # "image" = utiliser une image existante depuis Docker Hub
+    # On ne crée pas de Dockerfile pour MySQL - l'image officielle suffit
+
+    container_name: restaurant_db
+    # Nom du container - plus lisible que l'ID auto-généré
+
+    restart: unless-stopped
+    # Redémarre automatiquement si le container plante
+    # "unless-stopped" = sauf si on l'arrête manuellement
+
+    environment:
+      MYSQL_DATABASE: restaurant_db
+      MYSQL_USER: restaurant_user
+      MYSQL_PASSWORD: restaurant_password
+      MYSQL_ROOT_PASSWORD: root_password
+    # Variables d'environnement pour configurer MySQL au démarrage
+    # Ces valeurs correspondent à ce qu'on a mis dans .env.example
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+    # "volumes" = stockage persistant
+    # mysql_data = nom du volume Docker (défini en bas du fichier)
+    # /var/lib/mysql = où MySQL stocke ses données dans le container
+    # IMPORTANT : sans volume, toutes les données disparaissent à chaque restart !
+
+    ports:
+      - "3306:3306"
+    # "HOST:CONTAINER" - mappe le port 3306 de ta machine au port 3306 du container
+    # Te permet de te connecter à MySQL depuis un outil comme DBeaver ou MySQL Workbench
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Vérifie régulièrement que MySQL est bien démarré
+    # Django ne doit démarrer QU'APRÈS que MySQL soit prêt
+    # interval: vérifier toutes les 10 secondes
+    # retries: essayer 5 fois avant de déclarer le service "unhealthy"
+
+  # ---------------------------
+  # SERVICE 2 : Backend Django
+  # ---------------------------
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    # "build" = construire l'image depuis notre Dockerfile
+    # context = le dossier source (relatif à docker-compose.yml)
+    # dockerfile = nom du Dockerfile à utiliser
+
+    container_name: restaurant_backend
+
+    restart: unless-stopped
+
+    env_file:
+      - ../backend/.env
+    # Charge automatiquement toutes les variables du fichier .env
+    # C'est pour ça qu'on ne met jamais les secrets directement ici
+
+    volumes:
+      - ../backend:/app
+    # Monte le dossier backend/ local dans /app du container
+    # TRÈS IMPORTANT pour le développement :
+    # Si tu modifies un fichier Python → Django recharge automatiquement
+    # Sans ça, tu devrais rebuilder l'image à chaque modification !
+
+    ports:
+      - "8000:8000"
+    # L'API sera accessible sur http://localhost:8000
+
+    depends_on:
+      db:
+        condition: service_healthy
+    # Django ne démarre QU'APRÈS que MySQL soit "healthy" (healthcheck OK)
+    # Sans ça, Django essaie de se connecter avant que MySQL soit prêt → erreur
+
+  # ---------------------------
+  # SERVICE 3 : Frontend Next.js
+  # ---------------------------
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+
+    container_name: restaurant_frontend
+
+    restart: unless-stopped
+
+    env_file:
+      - ../frontend/.env.local
+    # Next.js utilise .env.local par convention
+
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    # Premier volume : monte le code local dans le container (hot reload)
+    # Deuxième volume : IMPORTANT - protège node_modules du container
+    # Sans la deuxième ligne, le node_modules de ta machine écraserait
+    # celui du container (qui est compilé pour Linux !)
+
+    ports:
+      - "3000:3000"
+    # Le frontend sera accessible sur http://localhost:3000
+
+    depends_on:
+      - backend
+    # Next.js démarre après le backend
+
+# ===========================
+# VOLUMES PERSISTANTS
+# Docker les gère indépendamment des containers
+# Les données survivent aux restart et rebuild
+# ===========================
+volumes:
+  mysql_data:
+    driver: local
+    # "local" = stocké sur ta machine dans le dossier Docker
