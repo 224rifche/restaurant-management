@@ -136,6 +136,7 @@ urlpatterns = [
     # NOS APPLICATIONS 
     # ---------------------------
     path('api/', include('apps.users.urls')),
+    path('api/', include('apps.employees.urls')),
     # C'est ici que l'on connecte nos propres modules métier.
     # Pour toute URL commençant par /api/, on passe le relais à apps/users/urls.py
 
