@@ -30,6 +30,9 @@ from .serializers import (
 )
 # pyrefly: ignore [missing-import]
 from apps.users.api_base import BaseViewSet
+from django.utils import timezone
+# pyrefly: ignore [missing-import]
+from apps.schedules.services import ReplacementService
 # BaseViewSet = notre ViewSet de base dans apps/users/api_base.py
 # Il contient déjà la logique commune (gestion swagger_fake_view)
 
@@ -419,3 +422,27 @@ class EmployeeViewSet(BaseViewSet):
             }
         
         return Response(result, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        tags=["Employés"],
+        summary="Marquer un employé comme absent aujourd'hui",
+        description="Déclenche automatiquement le moteur de remplacement."
+    )
+    @action(detail=True, methods=['post'], url_path='marquer-absent')
+    def marquer_absent(self, request, pk=None):
+        """
+        Déclenche manuellement le remplacement d'un employé.
+        Utile pour tester le moteur ou gérer une absence imprévue.
+        """
+        employee = self.get_object()
+        today = timezone.now().date()
+        
+        result = ReplacementService.trigger_replacement(employee, today)
+        
+        if isinstance(result, str):
+            return Response({"detail": result}, status=status.HTTP_400_BAD_REQUEST)
+            
+        return Response({
+            "detail": f"Remplacement effectué avec succès par {result.employee.user.nom}.",
+            "schedule_id": str(result.id)
+        }, status=status.HTTP_201_CREATED)
