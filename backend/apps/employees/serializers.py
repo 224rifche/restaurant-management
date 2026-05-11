@@ -17,6 +17,7 @@ from apps.users.api_base import BaseModelSerializerV1, BaseWriteSerializer
 # On importe le modèle ET les listes de choix
 # Les listes de choix servent à valider les données entrantes
 
+
 # ===========================
 # POURQUOI PLUSIEURS SERIALIZERS ?
 # ===========================
