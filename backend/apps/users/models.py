@@ -26,6 +26,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         ('admin', 'Administrateur'),
         ('caissier', 'Caissier'),
         ('serveur', 'Serveur'),
+        ('cuisinier', 'Cuisinier'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

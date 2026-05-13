@@ -31,6 +31,7 @@ from django.conf import settings
 POSTE_CHOICES = [
     ('serveur', 'Serveur / Serveuse'),
     ('caissier', 'Caissier / Caissière'),
+    ('cuisine', 'Cuisinier / Cuisine'),
     ('admin', 'Administrateur'),
 ]
 
@@ -167,11 +168,10 @@ class Employee(models.Model):
         verbose_name="Date d'embauche",
     )
     
-    salaire_base = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2, 
-        default=0.00,
-        verbose_name="Salaire de base"
+    date_embauche = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Date d'embauche",
     )
     
     statut = models.CharField(

@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'apps.schedules',              # Planning hebdomadaire
     'apps.attendance',             # Pointage (check-in/check-out)
     'apps.notifications',          # Alertes et notifications
+    'apps.expenses',               # Gestion des dépenses et factures
     'rest_framework_simplejwt.token_blacklist', 
 ]
 
@@ -267,3 +268,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Type d'ID par defaut pour tous les modeles
 # BigAutoField = entier 64 bits auto-incrementé
+# ===========================
+# CONFIGURATION RESTAURANT (Pointage)
+# ===========================
+RESTAURANT_LATITUDE = 9.509167  # Exemple : Conakry
+RESTAURANT_LONGITUDE = -13.712222
+POINTAGE_MAX_DISTANCE_METERS = 100 # Rayon autoris autour du restaurant
