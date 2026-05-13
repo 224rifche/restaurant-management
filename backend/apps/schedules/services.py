@@ -1,6 +1,8 @@
 from datetime import timedelta
 from django.db import transaction
 from .models import Schedule
+# pyrefly: ignore [missing-import]
+from apps.notifications.services import NotificationService
 
 class ReplacementService:
     """
@@ -64,8 +66,20 @@ class ReplacementService:
             notes=f"Remplacement automatique de {absent_employee.user.nom} (Absent)."
         )
 
-        # 5. TODO: Envoyer l'alerte/message au serveur
-        # Pour l'instant on simule avec un print
-        print(f"ALERTE : {replacer.user.nom}, tu remplaces {absent_employee.user.nom} aujourd'hui !")
+        # 5. ENVOI DES NOTIFICATIONS
+        # Alerte pour le manager
+        NotificationService.send_to_managers(
+            title="Remplacement Automatique",
+            message=f"{replacer.user.nom} a été assigné pour remplacer {absent_employee.user.nom} aujourd'hui.",
+            type='replacement'
+        )
+        
+        # Alerte pour l'employé remplaçant
+        NotificationService.send_to_user(
+            user=replacer.user,
+            title="Nouveau Shift (Remplacement)",
+            message=f"Bonjour, vous remplacez {absent_employee.user.nom} aujourd'hui pour la tâche {original_schedule.get_fonction_display()}.",
+            type='replacement'
+        )
 
         return new_schedule
