@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -36,6 +36,72 @@ export const authService = {
   logout: () => {
     localStorage.clear();
     window.location.href = '/login';
+  }
+};
+
+export const dashboardService = {
+  getStats: async () => {
+    const response = await api.get('/attendance/dashboard');
+    return response.data;
+  }
+};
+
+export const notificationService = {
+  getAll: async () => {
+    const response = await api.get('/notifications');
+    return response.data;
+  },
+  markAsRead: async (id) => {
+    const response = await api.post(`/notifications/${id}/mark-as-read`);
+    return response.data;
+  },
+  markAllRead: async () => {
+    const response = await api.post(`/notifications/mark-all-as-read`);
+    return response.data;
+  },
+  search: async (q) => {
+    const response = await api.get(`/notifications?search=${q}`);
+    return response.data;
+  }
+};
+
+export const employeeService = {
+  getAll: async () => {
+    const response = await api.get('/employees');
+    return response.data;
+  },
+  create: async (data) => {
+    const response = await api.post('/employees', data);
+    return response.data;
+  },
+  search: async (q) => {
+    const response = await api.get(`/employees?search=${q}`);
+    return response.data;
+  }
+};
+
+export const expenseService = {
+  search: async (q) => {
+    const response = await api.get(`/expenses?search=${q}`);
+    return response.data;
+  }
+};
+
+export const attendanceService = {
+  search: async (q) => {
+    const response = await api.get(`/attendance?search=${q}`);
+    return response.data;
+  }
+};
+
+export const scheduleService = {
+  search: async (q) => {
+    const response = await api.get(`/schedules?search=${q}`);
+    return response.data;
+  },
+  create: async (data) => {
+    const response = await api.post('/schedules/', data);
+    return response.data;
   }
 };
 

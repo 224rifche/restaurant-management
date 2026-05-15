@@ -1,6 +1,6 @@
 # Version du format docker-compose
 # La version 3.8 est stable et compatible avec notre Docker Compose v2
-version: '3.8'
+
 
 # ===========================
 # SERVICES
@@ -40,7 +40,7 @@ services:
     # IMPORTANT : sans volume, toutes les données disparaissent à chaque restart !
 
     ports:
-      - "3306:3306"
+      - "3307:3306"
     # "HOST:CONTAINER" - mappe le port 3306 de ta machine au port 3306 du container
     # Te permet de te connecter à MySQL depuis un outil comme DBeaver ou MySQL Workbench
 
