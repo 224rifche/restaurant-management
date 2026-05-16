@@ -16,6 +16,8 @@ Ce fichier ne fait que dire "pour /api/users/... va voir apps/users/urls.py"
 # ===========================
 # IMPORTS
 # ===========================
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 # Le module d'administration Django
 # admin.site.urls = toutes les URLs de l'interface /admin
@@ -136,6 +138,11 @@ urlpatterns = [
     # NOS APPLICATIONS 
     # ---------------------------
     path('api/', include('apps.users.urls')),
+    path('api/', include('apps.employees.urls')),
+    path('api/', include('apps.schedules.urls')),
+    path('api/', include('apps.attendance.urls')),
+    path('api/notifications/', include('apps.notifications.urls')),
+    path('api/expenses/', include('apps.expenses.urls')),
     # C'est ici que l'on connecte nos propres modules métier.
     # Pour toute URL commençant par /api/, on passe le relais à apps/users/urls.py
 
@@ -146,4 +153,8 @@ urlpatterns = [
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
+
+# Service des fichiers MEDIA (Selfies) en développement
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -73,6 +73,27 @@ class UserViewSet(BaseUserViewset):
         user = serializer.save()
         return Response(UserReadSerializer(user).data, status=status.HTTP_200_OK)
 
+    def get_permissions(self):
+        """
+        Définit les permissions selon l'action.
+        """
+        if self.action == 'me':
+            return [permissions.IsAuthenticated()]
+        return [IsAdminUser()]
+
+    @action(
+        detail=False,
+        methods=['get'],
+        permission_classes=[permissions.IsAuthenticated],
+        url_path='me'
+    )
+    def me(self, request):
+        """
+        Retourne le profil de l'utilisateur connecté.
+        """
+        serializer = UserReadSerializer(request.user)
+        return Response(serializer.data)
+
     @extend_schema(
         tags=["Users"],
         summary="Change le mot de passe d'un utilisateur",
