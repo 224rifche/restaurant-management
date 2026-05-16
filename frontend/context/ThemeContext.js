@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 
-const ThemeContext = createContext();
+const ThemeContext = createContext({ theme: 'dark', toggleTheme: () => { } });
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState('dark');
@@ -21,7 +21,7 @@ export function ThemeProvider({ children }) {
     if (typeof window !== 'undefined') {
       document.documentElement.setAttribute('data-theme', newTheme);
       // Forcer une petite mise à jour des classes du body si nécessaire
-      document.body.className = document.body.className; 
+      document.body.className = document.body.className;
     }
   };
 

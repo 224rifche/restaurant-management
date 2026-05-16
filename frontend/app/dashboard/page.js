@@ -107,12 +107,12 @@ export default function DashboardOverview() {
 
         <div className="flex flex-wrap items-center gap-3">
           <a href="/dashboard/employees">
-            <button className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">
+            <button className="flex items-center gap-2 px-4 py-2 bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[var(--background)] transition-all text-[var(--foreground)]">
               <UserPlus className="w-3.5 h-3.5" /> Ajouter employé
             </button>
           </a>
           <a href="/dashboard/attendance">
-            <button className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">
+            <button className="flex items-center gap-2 px-4 py-2 bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[var(--background)] transition-all text-[var(--foreground)]">
               <Clock3 className="w-3.5 h-3.5" /> Pointer
             </button>
           </a>
@@ -145,7 +145,7 @@ export default function DashboardOverview() {
                   </p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={handleMarkAllRead}
                 className="px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-500 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
               >
@@ -187,8 +187,8 @@ export default function DashboardOverview() {
           ))}
         </div>
 
-        {/* SYSTEM PULSE WIDGET - THEME BLEU ELECTRIQUE */}
-        <div className="bg-gradient-to-br from-blue-600/20 via-blue-900/10 to-transparent border border-blue-500/30 rounded-[2rem] p-6 relative overflow-hidden group shadow-[0_0_30px_rgba(59,130,246,0.1)]">
+        {/* SYSTEM PULSE WIDGET - ADAPTIVE BLUE */}
+        <div className="bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/20 rounded-[2rem] p-6 relative overflow-hidden group shadow-sm">
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 blur-3xl group-hover:bg-blue-500/20 transition-all"></div>
           <div className="relative z-10 space-y-4">
             <div className="flex items-center justify-between">
@@ -199,7 +199,7 @@ export default function DashboardOverview() {
               <p className="text-2xl font-black tracking-tight text-white">QR-99%</p>
               <p className="text-[9px] text-blue-200/60 font-bold uppercase tracking-widest">Rotation Token OK</p>
             </div>
-            <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+            <div className="w-full h-1 bg-[var(--background)]/20 rounded-full overflow-hidden">
               <motion.div
                 animate={{ width: ['20%', '100%'] }}
                 transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
@@ -228,7 +228,7 @@ export default function DashboardOverview() {
               {/* Combiner les activités de pointage et les notifications */}
               {stats?.recent_activity?.length > 0 ? stats.recent_activity.slice(0, 5).map((act, i) => (
                 <div key={act.id} className="flex items-start gap-6 relative">
-                  {i !== (stats.recent_activity.length - 1) && i < 4 && <div className="absolute left-[23px] top-12 bottom-[-32px] w-px bg-white/5"></div>}
+                  {i !== (stats.recent_activity.length - 1) && i < 4 && <div className="absolute left-[23px] top-12 bottom-[-32px] w-px bg-[var(--card-border)]"></div>}
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-[10px] shrink-0 border ${act.statut === 'absent' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' : 'bg-primary/10 border-primary/20 text-primary'
                     }`}>
                     {act.statut === 'absent' ? 'ABS' : 'IN'}
@@ -251,7 +251,7 @@ export default function DashboardOverview() {
                 <div className="py-20 text-center text-[var(--text-muted)] text-[10px] font-black uppercase tracking-widest italic">Aucun mouvement détecté aujourd'hui</div>
               )}
             </div>
-            <div className="px-8 py-4 bg-white/5 border-t border-white/5 flex justify-center">
+            <div className="px-8 py-4 bg-[var(--background)] border-t border-[var(--card-border)] flex justify-center">
               <a href="/dashboard/attendance">
                 <button className="text-[9px] font-black text-primary uppercase tracking-[0.3em] hover:underline transition-all">Voir l'historique complet</button>
               </a>
@@ -268,14 +268,14 @@ export default function DashboardOverview() {
           <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-[2rem] overflow-hidden shadow-sm">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-white/5 bg-white/5">
+                <tr className="border-b border-[var(--card-border)] bg-[var(--card-bg)]">
                   <th className="px-6 py-4 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Employé</th>
                   <th className="px-6 py-4 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Statut</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-[var(--card-border)]">
                 {stats?.employee_status?.length > 0 ? stats.employee_status.map((emp) => (
-                  <tr key={emp.id} className="hover:bg-white/5 transition-colors">
+                  <tr key={emp.id} className="hover:bg-[var(--background)] transition-colors">
                     <td className="px-6 py-4 text-[11px] font-bold text-[var(--foreground)] uppercase">{emp.nom}</td>
                     <td className="px-6 py-4">
                       <span className={`text-[9px] font-black uppercase tracking-widest ${emp.statut === 'present' ? 'text-primary' :
@@ -294,13 +294,13 @@ export default function DashboardOverview() {
               <div className="p-6 bg-primary/5 rounded-2xl border border-primary/10">
                 <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-2">Conseil Manager</p>
                 <p className="text-[10px] text-[var(--text-muted)] leading-relaxed font-medium italic">
-                  {stats?.attendance?.retards > 0 
+                  {stats?.attendance?.retards > 0
                     ? `"${stats.attendance.retards} retard(s) détecté(s) aujourd'hui. Un rappel sur la ponctualité pourrait être utile lors du prochain briefing."`
                     : stats?.attendance?.absents > 0
-                    ? `"${stats.attendance.absents} absence(s) signalée(s). Pensez à réorganiser les tâches prioritaires pour la journée."`
-                    : stats?.expenses?.today_total > 500000
-                    ? `"Les dépenses du jour sont élevées (${stats.expenses.today_total} FG). Vérifiez la validité des dernières factures saisies."`
-                    : `"Toute l'équipe est à l'heure et les indicateurs sont au vert. Continuez ainsi !"`
+                      ? `"${stats.attendance.absents} absence(s) signalée(s). Pensez à réorganiser les tâches prioritaires pour la journée."`
+                      : stats?.expenses?.today_total > 500000
+                        ? `"Les dépenses du jour sont élevées (${stats.expenses.today_total} FG). Vérifiez la validité des dernières factures saisies."`
+                        : `"Toute l'équipe est à l'heure et les indicateurs sont au vert. Continuez ainsi !"`
                   }
                 </p>
               </div>
@@ -314,10 +314,10 @@ export default function DashboardOverview() {
         <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-[2rem] p-8 shadow-sm">
           <div className="flex items-center justify-between mb-10">
             <h3 className="text-sm font-black uppercase tracking-widest italic">Performance Hebdomadaire</h3>
-            <select 
+            <select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
-              className="bg-black text-[10px] font-black uppercase tracking-widest outline-none cursor-pointer text-primary border-b border-primary/20 pb-1"
+              className="bg-transparent text-[var(--foreground)] text-[10px] font-black uppercase tracking-widest outline-none cursor-pointer border-b border-primary/20 pb-1"
             >
               <option value="Aujourd'hui">Aujourd'hui</option>
               <option value="Hier">Hier</option>
@@ -326,7 +326,7 @@ export default function DashboardOverview() {
               <option value="Cette Année">Cette Année</option>
             </select>
           </div>
-          
+
           {/* ✅ FIX: monté seulement côté client */}
           {mounted && (
             <div style={{ width: '100%', height: 250 }}>
@@ -334,23 +334,23 @@ export default function DashboardOverview() {
                 <AreaChart data={stats?.weekly_stats || []}>
                   <defs>
                     <linearGradient id="softEmerald" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.1} />
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
                       <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="5 5" stroke="rgba(255,255,255,0.02)" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                   <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={10} axisLine={false} tickLine={false} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#0f0f12',
-                      border: '1px solid #ffffff10',
+                      backgroundColor: 'var(--card-bg)',
+                      border: '1px solid var(--card-border)',
                       borderRadius: '12px',
                       fontSize: '10px',
-                      color: '#fff'
+                      color: 'var(--foreground)'
                     }}
                     itemStyle={{ color: '#10b981' }}
                   />
-                  <Area type="monotone" dataKey="val" stroke="#10b981" strokeWidth={3} fill="url(#softEmerald)" />
+                  <Area type="monotone" dataKey="attendance" stroke="#10b981" strokeWidth={4} fill="url(#softEmerald)" dot={{ fill: '#10b981', r: 4, strokeWidth: 2, stroke: 'var(--background)' }} activeDot={{ r: 6, strokeWidth: 0 }} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>

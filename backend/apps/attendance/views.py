@@ -1,12 +1,20 @@
+from datetime import datetime
 from django.shortcuts import render
+from rest_framework import status, permissions, filters
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema, extend_schema_view
+from django.core.exceptions import ValidationError
 
-<<<<<<< Updated upstream
-# Create your views here.
-=======
 # pyrefly: ignore [missing-import]
 from apps.users.api_base import BaseViewSet
 from .models import Attendance, AttendanceRule
-from .serializers import AttendanceReadSerializer, CheckInSerializer, CheckOutSerializer, AttendanceRuleSerializer
+from .serializers import (
+    AttendanceReadSerializer, 
+    CheckInSerializer, 
+    CheckOutSerializer, 
+    AttendanceRuleSerializer
+)
 from .analytics import AttendanceAnalytics
 from .services import AttendanceService
 
@@ -20,6 +28,8 @@ class AttendanceViewSet(BaseViewSet):
     """
     queryset = Attendance.objects.all().select_related('employee__user')
     serializer_class = AttendanceReadSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['employee__user__nom', 'statut']
 
     # ---------------------------
     # ACTION : POINTAGE ARRIVÉE
@@ -159,5 +169,3 @@ class AttendanceRuleViewSet(BaseViewSet):
     serializer_class = AttendanceRuleSerializer
     permission_classes = [permissions.IsAdminUser] # Seul l'admin y a accès
 
-from datetime import datetime # Import nécessaire pour get_qr_token
->>>>>>> Stashed changes

@@ -22,15 +22,19 @@ class AttendanceReadSerializer(BaseModelSerializerV1):
     Affiche les détails d'un pointage (avec photo).
     """
     employee = EmployeeListSimpleSerializer(read_only=True)
+    employee_name = serializers.SerializerMethodField()
     
     class Meta:
         model = Attendance
         fields = (
-            'id', 'employee', 'date', 
+            'id', 'employee', 'employee_name', 'date', 
             'heure_arrivee', 'selfie_arrivee',
             'heure_depart', 'selfie_depart',
             'statut', 'notes'
         )
+
+    def get_employee_name(self, obj):
+        return obj.employee.user.nom if obj.employee and obj.employee.user else "Inconnu"
 
 # ===================================================
 # SERIALIZER 2 : ACTION POINTAGE ARRIVÉE

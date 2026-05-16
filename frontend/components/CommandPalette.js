@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Search, 
-  Command, 
-  Users, 
-  Clock, 
-  Settings, 
-  Plus, 
+import {
+  Search,
+  Command,
+  Users,
+  Clock,
+  Settings,
+  Plus,
   ArrowRight,
   Calculator,
   Calendar,
@@ -43,7 +43,7 @@ export default function CommandPalette() {
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('toggle-command-palette', handleCustomEvent);
-    
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('toggle-command-palette', handleCustomEvent);
@@ -63,7 +63,7 @@ export default function CommandPalette() {
       setLoading(true);
       try {
         const { employeeService, expenseService, attendanceService, scheduleService, notificationService } = await import('@/lib/api');
-        
+
         const [empData, expData, attData, schData, notData] = await Promise.all([
           employeeService.search(query),
           expenseService.search(query),
@@ -113,10 +113,10 @@ export default function CommandPalette() {
         }));
 
         setResults([
-          ...employeeResults, 
-          ...expenseResults, 
-          ...attendanceResults, 
-          ...scheduleResults, 
+          ...employeeResults,
+          ...expenseResults,
+          ...attendanceResults,
+          ...scheduleResults,
           ...notificationResults
         ]);
       } catch (err) {
@@ -142,7 +142,7 @@ export default function CommandPalette() {
   ];
 
   const filteredActions = [
-    ...actions.filter(action => 
+    ...actions.filter(action =>
       action.name.toLowerCase().includes(query.toLowerCase()) ||
       action.category.toLowerCase().includes(query.toLowerCase()) ||
       (action.keywords && action.keywords.toLowerCase().includes(query.toLowerCase()))
@@ -154,14 +154,14 @@ export default function CommandPalette() {
     <AnimatePresence>
       {isOpen && (
         <>
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsOpen(false)}
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
           />
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
@@ -169,7 +169,7 @@ export default function CommandPalette() {
           >
             <div className="p-6 border-b border-white/5 flex items-center gap-4">
               <Search className="w-5 h-5 text-primary" />
-              <input 
+              <input
                 autoFocus
                 type="text"
                 placeholder="Que voulez-vous faire ?"
@@ -191,7 +191,7 @@ export default function CommandPalette() {
                   {['Actions Rapides', 'Employés trouvés', 'Dépenses trouvées', 'Pointages trouvés', 'Plannings trouvés', 'Alertes trouvées', 'Navigation', 'Système'].map(category => {
                     const categoryActions = filteredActions.filter(a => a.category === category);
                     if (categoryActions.length === 0) return null;
-                    
+
                     return (
                       <div key={category} className="space-y-2">
                         <h3 className="px-4 text-[9px] font-black uppercase tracking-[0.3em] text-white/20 italic">{category}</h3>

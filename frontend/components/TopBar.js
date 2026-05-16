@@ -6,25 +6,25 @@ import { useTheme } from '@/context/ThemeContext';
 
 export default function TopBar() {
   const { theme, toggleTheme } = useTheme();
-  const today = new Date().toLocaleDateString('fr-FR', { 
-    weekday: 'short', 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
+  const today = new Date().toLocaleDateString('fr-FR', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
   });
 
   return (
     <div className="h-20 flex items-center justify-between px-4 sm:px-8 bg-[var(--background)] backdrop-blur-md border-b border-[var(--card-border)] sticky top-0 z-30 transition-colors">
       {/* Search Bar - Hidden on small mobile */}
       <div className="flex-1 max-w-xl hidden sm:block ml-12 lg:ml-0">
-        <div 
+        <div
           className="relative group cursor-pointer"
           onClick={() => window.dispatchEvent(new CustomEvent('toggle-command-palette'))}
         >
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] group-focus-within:text-primary transition-colors" />
-          <div className="w-full bg-[var(--card-bg)] border border-[var(--card-border)] rounded-2xl pl-12 pr-4 py-2 text-sm text-[var(--text-muted)] flex items-center justify-between hover:border-primary/50 transition-all">
+            <div className="w-full bg-[var(--card-bg)] border border-[var(--card-border)] rounded-2xl pl-12 pr-4 py-2 text-sm text-[var(--text-muted)] flex items-center justify-between hover:border-primary/50 transition-all">
             <span>Rechercher...</span>
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-white/5 border border-white/10 rounded-lg">
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-[var(--background)] border border-[var(--card-border)] rounded-lg">
               <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Ctrl K</span>
             </div>
           </div>
@@ -44,29 +44,29 @@ export default function TopBar() {
 
         {/* Date - Hidden on mobile */}
         <div className="hidden md:flex flex-col items-end">
-          <div className="flex items-center gap-1 text-slate-500 text-[8px] font-bold uppercase">
+          <div className="flex items-center gap-1 text-[var(--text-muted)] text-[8px] font-bold uppercase">
             <MapPin className="w-2.5 h-2.5" /> Conakry
           </div>
         </div>
 
         {/* Theme Toggle */}
-        <motion.button 
+        <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={toggleTheme}
-          className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-all"
+          className="p-2.5 rounded-xl bg-[var(--card-bg)] border border-[var(--card-border)] text-[var(--text-muted)] hover:text-[var(--foreground)] transition-all shadow-sm"
         >
-          {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-blue-400" />}
+          {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5 text-blue-500" />}
         </motion.button>
 
         {/* Icons */}
-        <motion.button 
+        <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white relative"
+          className="p-2.5 rounded-xl bg-[var(--card-bg)] border border-[var(--card-border)] text-[var(--text-muted)] hover:text-[var(--foreground)] relative shadow-sm"
         >
           <Bell className="w-5 h-5" />
-          <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-primary rounded-full border-2 border-black"></span>
+          <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-primary rounded-full border-2 border-[var(--background)]"></span>
         </motion.button>
       </div>
     </div>

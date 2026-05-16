@@ -182,6 +182,12 @@ class Employee(models.Model):
         verbose_name='Statut',
     )
     
+    salaire_base = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Salaire de Base',
+        help_text='Montant fixe en FG'
+    )
+    
     notes = models.TextField(
         # TextField = texte long sans limite de longueur
         # Différent de CharField qui a une limite max_length

@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { 
-  Clock, 
-  UserCheck, 
-  UserMinus, 
-  AlertCircle, 
+import {
+  Clock,
+  UserCheck,
+  UserMinus,
+  AlertCircle,
   Search,
   Filter,
   Calendar as CalendarIcon,
@@ -29,7 +30,7 @@ export default function AttendancePage() {
         dashboardService.getStats(),
         attendanceService.search(search)
       ]);
-      
+
       setStats(statsData);
       const finalAtt = Array.isArray(attData) ? attData : (attData?.results || []);
       setAttendances(finalAtt);
@@ -61,16 +62,16 @@ export default function AttendancePage() {
             Contrôle des flux et ponctualité en temps réel
           </p>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <div className="relative group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] group-focus-within:text-primary transition-colors" />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Rechercher un employé..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl pl-10 pr-4 py-2.5 text-xs outline-none focus:border-primary/50 transition-all w-full md:w-64"
+              className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl pl-10 pr-4 py-2.5 text-xs outline-none focus:border-primary/50 transition-all w-full md:w-64 text-[var(--foreground)]"
             />
           </div>
           <button className="p-2.5 bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl text-[var(--text-muted)] hover:text-primary transition-all">
@@ -95,7 +96,7 @@ export default function AttendancePage() {
             className="glass-card p-6 border border-[var(--card-border)] bg-[var(--card-bg)]"
           >
             <div className="flex justify-between items-start mb-4">
-              <div className={`p-3 rounded-xl bg-white/5 border border-white/5 ${stat.color}`}>
+              <div className={`p-3 rounded-xl bg-[var(--background)] border border-[var(--card-border)] ${stat.color}`}>
                 <stat.icon className="w-5 h-5" />
               </div>
               <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Aujourd'hui</span>
@@ -109,16 +110,16 @@ export default function AttendancePage() {
       {/* Main Table/List */}
       <div className="glass-card border border-[var(--card-border)] bg-[var(--card-bg)] overflow-hidden">
         <div className="p-6 border-b border-[var(--card-border)] flex items-center justify-between">
-          <h3 className="text-sm font-black uppercase tracking-widest italic">Journal de pointage</h3>
+          <h3 className="text-sm font-black uppercase tracking-widest italic text-[var(--foreground)]">Journal de pointage</h3>
           <div className="flex items-center gap-2 text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/5 px-3 py-1.5 rounded-full border border-primary/10">
             <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></div>
             Live
           </div>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-white/5">
+            <thead className="bg-[var(--card-bg)]">
               <tr>
                 <th className="px-6 py-4 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Employé</th>
                 <th className="px-6 py-4 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Heure Arrivée</th>
@@ -129,7 +130,7 @@ export default function AttendancePage() {
             </thead>
             <tbody className="divide-y divide-[var(--card-border)]">
               {attendances.length > 0 ? attendances.map((att) => (
-                <tr key={att.id} className="group hover:bg-white/5 transition-colors">
+                <tr key={att.id} className="group hover:bg-[var(--background)] transition-colors">
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xs font-black">
@@ -148,11 +149,10 @@ export default function AttendancePage() {
                     )}
                   </td>
                   <td className="px-6 py-5">
-                    <span className={`px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${
-                      att.statut === 'present' ? 'bg-primary/5 border-primary/20 text-primary' :
-                      att.statut === 'en_retard' ? 'bg-amber-400/5 border-amber-400/20 text-amber-400' :
-                      'bg-rose-500/5 border-rose-500/20 text-rose-500'
-                    }`}>
+                    <span className={`px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${att.statut === 'present' ? 'bg-primary/5 border-primary/20 text-primary' :
+                        att.statut === 'en_retard' ? 'bg-amber-400/5 border-amber-400/20 text-amber-400' :
+                          'bg-rose-500/5 border-rose-500/20 text-rose-500'
+                      }`}>
                       {att.statut}
                     </span>
                   </td>
@@ -162,9 +162,9 @@ export default function AttendancePage() {
                     </div>
                   </td>
                   <td className="px-6 py-5 text-right">
-                    <button className="p-2 rounded-lg bg-white/5 border border-white/5 text-[var(--text-muted)] group-hover:text-primary transition-all">
+                    <Link href={`/dashboard/employees`} className="p-2 inline-block rounded-lg bg-[var(--background)] border border-[var(--card-border)] text-[var(--text-muted)] hover:text-primary transition-all">
                       <ChevronRight className="w-4 h-4" />
-                    </button>
+                    </Link>
                   </td>
                 </tr>
               )) : (
@@ -177,12 +177,7 @@ export default function AttendancePage() {
             </tbody>
           </table>
         </div>
-        
-        <div className="p-6 bg-white/5 flex justify-center">
-          <button className="flex items-center gap-2 text-[10px] font-black text-[var(--text-muted)] hover:text-primary uppercase tracking-widest transition-all">
-            Voir tout le journal <ArrowRight className="w-3 h-3" />
-          </button>
-        </div>
+
       </div>
     </div>
   );

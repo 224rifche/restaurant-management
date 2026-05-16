@@ -3,13 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  LayoutDashboard, 
-  Clock, 
-  FileText, 
-  Calendar, 
-  Users, 
-  Bell, 
+import {
+  LayoutDashboard,
+  Clock,
+  FileText,
+  Calendar,
+  Users,
+  Bell,
   LogOut,
   X,
   Menu
@@ -44,7 +44,7 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile Toggle Button */}
-      <button 
+      <button
         onClick={toggleSidebar}
         className="lg:hidden fixed top-5 left-5 z-[100] p-3 bg-primary text-black rounded-xl shadow-lg"
       >
@@ -54,7 +54,7 @@ export default function Sidebar() {
       {/* Overlay for mobile */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -66,13 +66,13 @@ export default function Sidebar() {
 
       {/* Sidebar Content */}
       <aside className={`
-        fixed lg:sticky top-0 left-0 h-screen w-72 bg-[var(--sidebar-bg)] border-r border-[var(--card-border)] flex flex-col p-6 z-[90]
+        fixed lg:sticky top-0 left-0 h-screen w-72 bg-[var(--background)] border-r border-[var(--card-border)] flex flex-col p-6 z-[90]
         transition-transform duration-500 ease-in-out shadow-2xl lg:shadow-none
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         {/* Logo & Brand */}
         <div className="flex items-center gap-3 mb-12 px-2 mt-12 lg:mt-0">
-          <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-primary/20">
+          <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-[var(--card-border)] shadow-sm">
             <Image src="/LOGO.png" alt="Logo" fill sizes="40px" className="object-cover" />
           </div>
           <div>
@@ -81,42 +81,87 @@ export default function Sidebar() {
         </div>
 
         {/* Menu Links */}
-        <nav className="flex-1 space-y-2 overflow-y-auto custom-scrollbar pr-2">
+        <motion.nav
+          variants={{
+            hidden: { opacity: 0 },
+            visible: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.05
+              }
+            }
+          }}
+          initial="hidden"
+          animate="visible"
+          className="flex-1 space-y-2 overflow-y-auto custom-scrollbar pr-2"
+        >
           {menuItems.map((item) => {
             const isActive = pathname === item.path;
+
             return (
-              <Link key={item.path} href={item.path} onClick={() => setIsOpen(false)}>
+              <Link
+                key={item.path}
+                href={item.path}
+                onClick={() => setIsOpen(false)}
+                className="relative block"
+              >
+                {/* STATIC BACKGROUND HIGHLIGHT */}
+                {isActive && (
+                  <motion.div
+                    layoutId="nav-highlight"
+                    className="absolute inset-0 bg-primary rounded-xl shadow-lg shadow-primary/20"
+                    transition={{
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 35
+                    }}
+                  />
+                )}
+
                 <motion.div
-                  whileHover={{ x: 5 }}
-                  className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-300 group ${
-                    isActive 
-                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_20px_rgba(16,185,129,0.05)]' 
-                    : 'text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-white/5'
-                  }`}
+                  variants={{
+                    hidden: { x: -20, opacity: 0 },
+                    visible: { x: 0, opacity: 1 }
+                  }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`relative flex items-center gap-4 px-4 py-3.5 rounded-xl transition-colors duration-300 z-10 ${isActive ? 'text-white' : 'text-[var(--text-muted)] hover:text-[var(--foreground)]'
+                    }`}
                 >
-                  <item.icon className={`w-5 h-5 ${isActive ? 'text-primary' : 'text-[var(--text-muted)] group-hover:text-slate-300'}`} />
+                  <item.icon className={`w-5 h-5 transition-colors ${isActive ? 'text-white' : 'text-[var(--text-muted)]'
+                    }`} />
                   <span className="font-bold text-sm tracking-wide">{item.name}</span>
+
+                  {isActive && (
+                    <motion.div
+                      className="ml-auto w-1.5 h-1.5 rounded-full bg-white"
+                    />
+                  )}
                 </motion.div>
               </Link>
             );
           })}
-        </nav>
+        </motion.nav>
 
         {/* User & Logout */}
-        <div className="mt-auto pt-6 border-t border-white/5 space-y-6">
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="mt-auto pt-6 border-t border-[var(--card-border)] space-y-6"
+        >
+          <div className="p-4 rounded-2xl bg-[var(--card-bg)] border border-[var(--card-border)]">
             <p className="text-[var(--foreground)] text-xs font-black truncate">{userInfo.nom}</p>
             <p className="text-primary text-[10px] font-bold uppercase tracking-widest mt-1">{userInfo.role}</p>
           </div>
-          
-          <button 
+
+          <button
             onClick={() => authService.logout()}
-            className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-red-400 hover:bg-red-400/10 transition-all font-bold text-sm border border-transparent hover:border-red-400/20"
+            className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-[var(--text-muted)] hover:text-rose-500 hover:bg-rose-500/5 transition-all font-bold text-sm border border-transparent"
           >
             <LogOut className="w-5 h-5" />
             Déconnexion
           </button>
-        </div>
+        </motion.div>
       </aside>
     </>
   );
