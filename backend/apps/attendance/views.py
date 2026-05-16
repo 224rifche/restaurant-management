@@ -1,13 +1,13 @@
-from rest_framework import status, permissions
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from django.core.exceptions import ValidationError
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from django.shortcuts import render
 
+<<<<<<< Updated upstream
+# Create your views here.
+=======
 # pyrefly: ignore [missing-import]
 from apps.users.api_base import BaseViewSet
 from .models import Attendance, AttendanceRule
 from .serializers import AttendanceReadSerializer, CheckInSerializer, CheckOutSerializer, AttendanceRuleSerializer
+from .analytics import AttendanceAnalytics
 from .services import AttendanceService
 
 @extend_schema_view(
@@ -108,6 +108,40 @@ class AttendanceViewSet(BaseViewSet):
             "absences_detected": count
         }, status=status.HTTP_200_OK)
 
+    # ---------------------------
+    # ACTION : STATISTIQUES DASHBOARD (Global)
+    # ---------------------------
+    @extend_schema(
+        tags=["Analytics"],
+        summary="Statistiques globales du jour pour le dashboard",
+    )
+    @action(detail=False, methods=['get'], url_path='dashboard', permission_classes=[permissions.IsAdminUser])
+    def dashboard(self, request):
+        stats = AttendanceAnalytics.get_global_dashboard_stats()
+        return Response(stats, status=status.HTTP_200_OK)
+
+    # ---------------------------
+    # ACTION : RAPPORT DÉTAILLÉ PAR EMPLOYÉ
+    # ---------------------------
+    @extend_schema(
+        tags=["Analytics"],
+        summary="Rapport complet d'un employé sur une période",
+    )
+    @action(detail=False, methods=['get'], url_path='employee-report', permission_classes=[permissions.IsAdminUser])
+    def employee_report(self, request):
+        emp_id = request.query_params.get('employee_id')
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        
+        if not all([emp_id, start_date, end_date]):
+            return Response(
+                {"detail": "Paramètres manquants (employee_id, start_date, end_date)"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        stats = AttendanceAnalytics.get_employee_stats(emp_id, start_date, end_date)
+        return Response(stats, status=status.HTTP_200_OK)
+
 # ===================================================
 # VIEWSET : RÈGLES DE POINTAGE
 # ===================================================
@@ -126,3 +160,4 @@ class AttendanceRuleViewSet(BaseViewSet):
     permission_classes = [permissions.IsAdminUser] # Seul l'admin y a accès
 
 from datetime import datetime # Import nécessaire pour get_qr_token
+>>>>>>> Stashed changes
