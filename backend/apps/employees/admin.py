@@ -3,7 +3,7 @@ from .models import Employee
 
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
-    list_display = ('get_name', 'poste', 'date_embauche', 'salaire_base', 'inserted_at')
+    list_display = ('get_name', 'poste', 'date_embauche', 'inserted_at')
     list_filter = ('poste', 'date_embauche')
     search_fields = ('user__nom', 'user__telephone')
     ordering = ('-inserted_at',)

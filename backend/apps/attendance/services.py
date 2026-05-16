@@ -1,4 +1,5 @@
 import hashlib
+import math
 from datetime import datetime, timezone, timedelta
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -12,8 +13,25 @@ from .models import Attendance, AttendanceRule
 
 class AttendanceService:
     """
-    Service gérant la logique de pointage (QR Code, Selfie, Retards).
+    Service gérant la logique de pointage (QR Code, Selfie, Retards, GPS).
     """
+
+    @staticmethod
+    def calculate_distance(lat1, lon1, lat2, lon2):
+        """
+        Calcule la distance en mètres entre deux points GPS (Haversine).
+        """
+        if lat1 is None or lon1 is None:
+            return 0
+        
+        R = 6371000  # Rayon de la Terre en mètres
+        phi1, phi2 = math.radians(float(lat1)), math.radians(float(lat2))
+        dphi = math.radians(float(lat2) - float(lat1))
+        dlambda = math.radians(float(lon2) - float(lon1))
+        
+        a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlambda/2)**2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        return R * c
 
     @staticmethod
     def generate_current_qr_token():
@@ -48,6 +66,12 @@ class AttendanceService:
         """
         Gère l'arrivée d'un employé.
         """
+        # 0. Vérification GPS
+        if lat and lon:
+            dist = cls.calculate_distance(lat, lon, settings.RESTAURANT_LATITUDE, settings.RESTAURANT_LONGITUDE)
+            if dist > settings.POINTAGE_MAX_DISTANCE_METERS:
+                 raise ValidationError(f"Vous êtes trop loin du restaurant ({int(dist)}m). Pointage refusé.")
+
         # 1. Vérification du QR Code
         if not cls.verify_qr_token(qr_token):
             raise ValidationError("QR Code invalide ou expiré. Veuillez scanner le code actuel sur la tablette.")
@@ -88,6 +112,12 @@ class AttendanceService:
         """
         Gère le départ d'un employé.
         """
+        # 0. Vérification GPS
+        if lat and lon:
+            dist = cls.calculate_distance(lat, lon, settings.RESTAURANT_LATITUDE, settings.RESTAURANT_LONGITUDE)
+            if dist > settings.POINTAGE_MAX_DISTANCE_METERS:
+                 raise ValidationError(f"Vous êtes trop loin du restaurant ({int(dist)}m) pour pointer votre départ.")
+
         # 1. Vérification du QR Code (obligatoire aussi au départ)
         if not cls.verify_qr_token(qr_token):
             raise ValidationError("QR Code invalide ou expiré. Veuillez scanner le code actuel sur la tablette.")

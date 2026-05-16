@@ -1,11 +1,8 @@
-# ===========================
-# IMPORTS
-# ===========================
-import uuid
 from django.db import models
-# pyrefly: ignore [missing-import]
-from apps.employees.models import Employee
 
+<<<<<<< Updated upstream
+# Create your models here.
+=======
 # ===========================
 # CHOIX DE STATUTS DE POINTAGE
 # ===========================
@@ -120,7 +117,7 @@ class Attendance(models.Model):
         verbose_name="Token QR Code utilisé"
     )
 
-    # Pour la géolocalisation optionnelle
+    # Géolocalisation
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 
@@ -140,3 +137,4 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"Pointage {self.employee.user.nom} - {self.date}"
+>>>>>>> Stashed changes
