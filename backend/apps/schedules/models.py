@@ -22,14 +22,20 @@ class Schedule(models.Model):
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
-    employee = models.ForeignKey(
+    employee = models.OneToOneField(
         Employee, 
         on_delete=models.CASCADE, 
-        related_name='schedules',
+        related_name='schedule',
         verbose_name="Employé"
     )
     
-    date = models.DateField(verbose_name="Date du service")
+    jours_repos = models.CharField(
+        max_length=100, 
+        blank=True, 
+        null=True, 
+        verbose_name="Jours de repos",
+        help_text="Ex: Lundi, Mardi"
+    )
     
     heure_debut = models.TimeField(verbose_name="Heure de début")
     
@@ -68,13 +74,12 @@ class Schedule(models.Model):
 
     class Meta:
         db_table = 'schedules'
-        ordering = ['date', 'heure_debut']
-        unique_together = ['employee', 'date']
-        verbose_name = "Planning"
-        verbose_name_plural = "Plannings"
+        ordering = ['employee__user__nom']
+        verbose_name = "Planning Fixe"
+        verbose_name_plural = "Plannings Fixes"
 
     def __str__(self):
-        return f"{self.date} - {self.employee.user.nom} ({self.get_fonction_display()})"
+        return f"Planning de {self.employee.user.nom} ({self.get_fonction_display()})"
 
     def clean(self):
         """

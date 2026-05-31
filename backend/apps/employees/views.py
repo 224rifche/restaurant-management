@@ -420,8 +420,26 @@ class EmployeeViewSet(BaseViewSet):
                 
                 'employes': EmployeeListSimpleSerializer(employes_du_poste, many=True).data,
             }
+        return Response(result)
         
-        return Response(result, status=status.HTTP_200_OK)
+    @extend_schema(
+        tags=["Employés"],
+        summary="Supprimer définitivement un employé",
+        description="Supprime l'employé et son compte utilisateur associé définitivement de la base de données."
+    )
+    @action(detail=True, methods=['delete'], url_path='hard-delete', permission_classes=[IsAdminOnly])
+    def hard_delete(self, request, pk=None):
+        """
+        Supprime définitivement un employé (et son User associé par cascade).
+        """
+        employee = self.get_object()
+        user = employee.user
+        nom = user.nom
+        user.delete()
+        return Response(
+            {"detail": f"L'employé {nom} a été supprimé définitivement."},
+            status=status.HTTP_200_OK
+        )
 
     @extend_schema(
         tags=["Employés"],

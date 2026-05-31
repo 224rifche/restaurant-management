@@ -29,7 +29,7 @@ class ScheduleReadSerializer(BaseModelSerializerV1):
         fields = (
             'id',
             'employee',
-            'date',
+            'jours_repos',
             'heure_debut',
             'heure_fin',
             'fonction',
@@ -51,7 +51,7 @@ class ScheduleWriteSerializer(BaseWriteSerializer):
         model = Schedule
         fields = (
             'employee',
-            'date',
+            'jours_repos',
             'heure_debut',
             'heure_fin',
             'fonction',

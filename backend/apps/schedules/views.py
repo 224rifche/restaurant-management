@@ -5,6 +5,18 @@ from apps.users.api_base import BaseViewSet
 from .models import Schedule
 from .serializers import ScheduleReadSerializer, ScheduleWriteSerializer
 
+
+class IsAdminOnly(permissions.BasePermission):
+    """
+    Permission pour les administrateurs uniquement basée sur le rôle.
+    """
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated
+            and request.user.role == 'admin'
+        )
+
+
 @extend_schema_view(
     list=extend_schema(tags=["Planning"], summary="Liste des plannings"),
     create=extend_schema(tags=["Planning"], summary="Créer un créneau"),
@@ -25,7 +37,7 @@ class ScheduleViewSet(BaseViewSet):
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [permissions.IsAdminUser()]
+            return [IsAdminOnly()]
         return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
@@ -33,15 +45,8 @@ class ScheduleViewSet(BaseViewSet):
         
         # Filtres simples
         employee_id = self.request.query_params.get('employee_id')
-        date = self.request.query_params.get('date')
-        start_date = self.request.query_params.get('start_date')
-        end_date = self.request.query_params.get('end_date')
 
         if employee_id:
             queryset = queryset.filter(employee_id=employee_id)
-        if date:
-            queryset = queryset.filter(date=date)
-        if start_date and end_date:
-            queryset = queryset.filter(date__range=[start_date, end_date])
             
         return queryset

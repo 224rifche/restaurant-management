@@ -88,8 +88,8 @@ urlpatterns = [
     # ---------------------------
     # AUTHENTIFICATION JWT
     # ---------------------------
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    # POST /api/token/
+    path('api/token', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    # POST /api/token
     # Corps de la requete (JSON) : telephone et password
     #
     # Reponse si correct (HTTP 200) : access et refresh tokens
@@ -100,10 +100,10 @@ urlpatterns = [
     # Django a besoin d'une fonction → .as_view() fait la conversion
     #
     # name='token_obtain_pair' : nom de cette URL pour la référencer dans le code
-    # Ex: reverse('token_obtain_pair') → '/api/token/'
+    # Ex: reverse('token_obtain_pair') → '/api/token'
 
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    # POST /api/token/refresh/
+    path('api/token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
+    # POST /api/token/refresh
     # Corps de la requête (JSON) :
     # {
     #   "refresh": "eyJ0eXAi...."  ← l'ancien refresh token
@@ -119,8 +119,8 @@ urlpatterns = [
     # Le frontend appelle cet endpoint automatiquement quand il reçoit HTTP 401
     # L'utilisateur ne voit rien, l'expérience est transparente
 
-    path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
-    # POST /api/token/verify/
+    path('api/token/verify', TokenVerifyView.as_view(), name='token_verify'),
+    # POST /api/token/verify
     # Corps de la requête :
     # {
     #   "token": "eyJ0eXAi...."  ← l'access token à vérifier
@@ -141,8 +141,8 @@ urlpatterns = [
     path('api/', include('apps.employees.urls')),
     path('api/', include('apps.schedules.urls')),
     path('api/', include('apps.attendance.urls')),
-    path('api/notifications/', include('apps.notifications.urls')),
-    path('api/expenses/', include('apps.expenses.urls')),
+    path('api/', include('apps.notifications.urls')),
+    path('api/', include('apps.expenses.urls')),
     # C'est ici que l'on connecte nos propres modules métier.
     # Pour toute URL commençant par /api/, on passe le relais à apps/users/urls.py
 

@@ -59,7 +59,14 @@ class UserViewSet(BaseUserViewset):
         return UserReadSerializer
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        # Prevent privilege escalation
+        data = request.data.copy()
+        if not request.user.is_authenticated or request.user.role != 'admin':
+            # Anonymous users or non-admins cannot create 'admin' accounts
+            if data.get('role') == 'admin':
+                data['role'] = 'serveur' # Force safe default
+        
+        serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         read_serializer = UserReadSerializer(user)
@@ -77,6 +84,8 @@ class UserViewSet(BaseUserViewset):
         """
         Définit les permissions selon l'action.
         """
+        if self.action == 'create':
+            return [permissions.AllowAny()]
         if self.action == 'me':
             return [permissions.IsAuthenticated()]
         return [IsAdminUser()]

@@ -2,28 +2,34 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 
-const ThemeContext = createContext({ theme: 'dark', toggleTheme: () => { } });
+const ThemeContext = createContext({ theme: 'dark', toggleTheme: () => {} });
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState('dark');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Récupérer le thème sauvé ou utiliser sombre par défaut
     const savedTheme = localStorage.getItem('slm-theme') || 'dark';
     setTheme(savedTheme);
     document.documentElement.setAttribute('data-theme', savedTheme);
+    setMounted(true);
   }, []);
 
   const toggleTheme = () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
     localStorage.setItem('slm-theme', newTheme);
-    if (typeof window !== 'undefined') {
-      document.documentElement.setAttribute('data-theme', newTheme);
-      // Forcer une petite mise à jour des classes du body si nécessaire
-      document.body.className = document.body.className;
-    }
+    document.documentElement.setAttribute('data-theme', newTheme);
   };
+
+  // Evite le flash : on rend les enfants seulement après hydratation
+  if (!mounted) {
+    return (
+      <ThemeContext.Provider value={{ theme: 'dark', toggleTheme: () => {} }}>
+        <div style={{ visibility: 'hidden' }}>{children}</div>
+      </ThemeContext.Provider>
+    );
+  }
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>

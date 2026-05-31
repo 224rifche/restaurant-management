@@ -18,6 +18,18 @@ from .serializers import (
 from .analytics import AttendanceAnalytics
 from .services import AttendanceService
 
+
+class IsAdminOnly(permissions.BasePermission):
+    """
+    Permission pour les administrateurs uniquement basée sur le rôle.
+    """
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated
+            and request.user.role == 'admin'
+        )
+
+
 @extend_schema_view(
     list=extend_schema(tags=["Pointage"], summary="Liste des pointages"),
     retrieve=extend_schema(tags=["Pointage"], summary="Détail d'un pointage"),
@@ -110,7 +122,7 @@ class AttendanceViewSet(BaseViewSet):
         tags=["Pointage"],
         summary="Détecter les absents et lancer les remplacements (Action Admin)",
     )
-    @action(detail=False, methods=['post'], url_path='process-absences', permission_classes=[permissions.IsAdminUser])
+    @action(detail=False, methods=['post'], url_path='process-absences', permission_classes=[IsAdminOnly])
     def process_absences(self, request):
         count = AttendanceService.check_and_process_absences()
         return Response({
@@ -125,7 +137,7 @@ class AttendanceViewSet(BaseViewSet):
         tags=["Analytics"],
         summary="Statistiques globales du jour pour le dashboard",
     )
-    @action(detail=False, methods=['get'], url_path='dashboard', permission_classes=[permissions.IsAdminUser])
+    @action(detail=False, methods=['get'], url_path='dashboard', permission_classes=[IsAdminOnly])
     def dashboard(self, request):
         stats = AttendanceAnalytics.get_global_dashboard_stats()
         return Response(stats, status=status.HTTP_200_OK)
@@ -137,7 +149,7 @@ class AttendanceViewSet(BaseViewSet):
         tags=["Analytics"],
         summary="Rapport complet d'un employé sur une période",
     )
-    @action(detail=False, methods=['get'], url_path='employee-report', permission_classes=[permissions.IsAdminUser])
+    @action(detail=False, methods=['get'], url_path='employee-report', permission_classes=[IsAdminOnly])
     def employee_report(self, request):
         emp_id = request.query_params.get('employee_id')
         start_date = request.query_params.get('start_date')
@@ -167,5 +179,5 @@ class AttendanceRuleViewSet(BaseViewSet):
     """
     queryset = AttendanceRule.objects.all()
     serializer_class = AttendanceRuleSerializer
-    permission_classes = [permissions.IsAdminUser] # Seul l'admin y a accès
+    permission_classes = [IsAdminOnly] # Seul l'admin y a accès
 
