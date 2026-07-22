@@ -273,4 +273,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ===========================
 RESTAURANT_LATITUDE = 9.509167  # Exemple : Conakry
 RESTAURANT_LONGITUDE = -13.712222
-POINTAGE_MAX_DISTANCE_METERS = 100 # Rayon autoris autour du restaurant
+POINTAGE_MAX_DISTANCE_METERS = config('POINTAGE_MAX_DISTANCE_METERS', default=100, cast=int)
+# Rayon autorise autour du restaurant (en metres). Configurable via .env
+# pour pouvoir tester en developpement depuis n'importe ou (valeur tres grande)
+# sans jamais toucher au code -- seule la config change entre dev et prod.
