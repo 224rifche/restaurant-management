@@ -1,99 +1,114 @@
-import hashlib
+﻿import hashlib
 import math
 from datetime import datetime, timezone, timedelta
 from django.conf import settings
 from django.core.exceptions import ValidationError
 # pyrefly: ignore [missing-import]
-from apps.schedules.models import Schedule
+from apps.schedules.models import WeeklyAssignment, ShiftSchedule
 # pyrefly: ignore [missing-import]
 from apps.schedules.services import ReplacementService
 # pyrefly: ignore [missing-import]
 from apps.notifications.services import NotificationService
 from .models import Attendance, AttendanceRule
 
+# ===========================================================
+# NOMS DES JOURS EN FRANCAIS -- pour convertir la date du jour
+# en 'jour_semaine' utilise par WeeklyAssignment/ShiftSchedule
+# ===========================================================
+JOURS_PYTHON_VERS_FR = {
+    0: 'lundi', 1: 'mardi', 2: 'mercredi', 3: 'jeudi',
+    4: 'vendredi', 5: 'samedi', 6: 'dimanche',
+}
+
+# REGLE METIER : heure limite absolue -- si l'employe n'a toujours pas
+# pointe son arrivee a cette heure, le systeme le marque AUTOMATIQUEMENT
+# absent, sans attendre l'intervention d'un admin.
+HEURE_LIMITE_ABSENCE_AUTO = datetime.strptime("20:30", "%H:%M").time()
+
+
 class AttendanceService:
     """
-    Service gérant la logique de pointage (QR Code, Selfie, Retards, GPS).
+    Service gerant la logique de pointage (QR Code, Selfie, Retards, GPS).
     """
 
     @staticmethod
     def calculate_distance(lat1, lon1, lat2, lon2):
-        """
-        Calcule la distance en mètres entre deux points GPS (Haversine).
-        """
         if lat1 is None or lon1 is None:
             return 0
-        
-        R = 6371000  # Rayon de la Terre en mètres
+        R = 6371000
         phi1, phi2 = math.radians(float(lat1)), math.radians(float(lat2))
         dphi = math.radians(float(lat2) - float(lat1))
         dlambda = math.radians(float(lon2) - float(lon1))
-        
         a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlambda/2)**2
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
         return R * c
 
     @staticmethod
     def generate_current_qr_token():
-        """
-        Génère un token unique basé sur la minute actuelle.
-        Le QR Code sur la tablette devra afficher ce token.
-        """
-        # On utilise une clé secrète + la date et l'heure (arrondie à la minute)
         now = datetime.now()
         seed = f"{settings.SECRET_KEY}-{now.strftime('%Y-%m-%d-%H-%M')}"
         return hashlib.sha256(seed.encode()).hexdigest()[:12]
 
     @staticmethod
     def verify_qr_token(client_token):
-        """
-        Vérifie si le token scanné par l'employé est valide.
-        On accepte le token de la minute actuelle OU de la minute précédente (latence).
-        """
-        # Token actuel
         if client_token == AttendanceService.generate_current_qr_token():
             return True
-            
-        # Token d'il y a 1 minute (pour être souple)
         last_minute = datetime.now() - timedelta(minutes=1)
         seed_last = f"{settings.SECRET_KEY}-{last_minute.strftime('%Y-%m-%d-%H-%M')}"
         token_last = hashlib.sha256(seed_last.encode()).hexdigest()[:12]
-        
         return client_token == token_last
+
+    @staticmethod
+    def _get_shift_du_jour(employee, jour_semaine):
+        """
+        Retrouve l'horaire de reference (ShiftSchedule) applicable
+        a CET employe, CE jour de la semaine -- en passant par
+        son affectation WeeklyAssignment du jour.
+
+        REGLE METIER : le champ tolerance_retard_minutes de ShiftSchedule
+        est CONFIDENTIEL -- seul ce service backend le lit, jamais
+        expose directement a un employe via l'API.
+        """
+        assignment = WeeklyAssignment.objects.filter(
+            employee=employee, jour_semaine=jour_semaine
+        ).select_related('shift').first()
+
+        if assignment and assignment.shift:
+            return assignment.shift
+        return None
 
     @classmethod
     def pointage_arrivee(cls, employee, selfie, qr_token, lat=None, lon=None):
         """
-        Gère l'arrivée d'un employé.
+        Gere l'arrivee d'un employe.
         """
-        # 0. Vérification GPS
         if lat and lon:
             dist = cls.calculate_distance(lat, lon, settings.RESTAURANT_LATITUDE, settings.RESTAURANT_LONGITUDE)
             if dist > settings.POINTAGE_MAX_DISTANCE_METERS:
-                 raise ValidationError(f"Vous êtes trop loin du restaurant ({int(dist)}m). Pointage refusé.")
+                raise ValidationError(f"Vous etes trop loin du restaurant ({int(dist)}m). Pointage refuse.")
 
-        # 1. Vérification du QR Code
         if not cls.verify_qr_token(qr_token):
-            raise ValidationError("QR Code invalide ou expiré. Veuillez scanner le code actuel sur la tablette.")
+            raise ValidationError("QR Code invalide ou expire. Veuillez scanner le code actuel sur la tablette.")
 
-        # 2. Vérifier si déjà pointé aujourd'hui
         today = datetime.now().date()
         if Attendance.objects.filter(employee=employee, date=today).exists():
-            raise ValidationError("Vous avez déjà pointé votre arrivée aujourd'hui.")
+            raise ValidationError("Vous avez deja pointe votre arrivee aujourd'hui.")
 
-        # 3. Calcul du statut (Retard ?)
         now_time = datetime.now().time()
         statut = 'present'
-        
-        # On cherche le planning de l'employé pour aujourd'hui
-        planning = Schedule.objects.filter(employee=employee, date=today).first()
-        if planning:
-            # Si pointage > heure_debut + 15 minutes de grâce
-            grace_time = (datetime.combine(today, planning.heure_debut) + timedelta(minutes=15)).time()
-            if now_time > grace_time:
+
+        # REGLE METIER : calcul du retard via le NOUVEAU systeme
+        # (ShiftSchedule + tolerance confidentielle), et non plus
+        # via l'ancien champ Schedule.heure_debut qui n'existe plus.
+        jour_semaine = JOURS_PYTHON_VERS_FR[today.weekday()]
+        shift = cls._get_shift_du_jour(employee, jour_semaine)
+
+        if shift:
+            tolerance = timedelta(minutes=shift.tolerance_retard_minutes)
+            limite_retard = (datetime.combine(today, shift.heure_debut) + tolerance).time()
+            if now_time > limite_retard:
                 statut = 'en_retard'
 
-        # 4. Création du pointage
         attendance = Attendance.objects.create(
             employee=employee,
             date=today,
@@ -104,60 +119,52 @@ class AttendanceService:
             latitude=lat,
             longitude=lon
         )
-        
+
         return attendance
 
     @classmethod
     def pointage_depart(cls, employee, selfie, qr_token, lat=None, lon=None):
         """
-        Gère le départ d'un employé.
+        Gere le depart d'un employe.
         """
-        # 0. Vérification GPS
         if lat and lon:
             dist = cls.calculate_distance(lat, lon, settings.RESTAURANT_LATITUDE, settings.RESTAURANT_LONGITUDE)
             if dist > settings.POINTAGE_MAX_DISTANCE_METERS:
-                 raise ValidationError(f"Vous êtes trop loin du restaurant ({int(dist)}m) pour pointer votre départ.")
+                raise ValidationError(f"Vous etes trop loin du restaurant ({int(dist)}m) pour pointer votre depart.")
 
-        # 1. Vérification du QR Code (obligatoire aussi au départ)
         if not cls.verify_qr_token(qr_token):
-            raise ValidationError("QR Code invalide ou expiré. Veuillez scanner le code actuel sur la tablette.")
+            raise ValidationError("QR Code invalide ou expire. Veuillez scanner le code actuel sur la tablette.")
 
-        # 2. Récupérer le pointage "ouvert" le plus récent
-        # On cherche un pointage qui n'a pas encore d'heure de départ
         attendance = Attendance.objects.filter(
-            employee=employee, 
+            employee=employee,
             heure_depart__isnull=True
         ).order_by('-date', '-heure_arrivee').first()
-        
-        if not attendance:
-            raise ValidationError("Aucun pointage d'arrivée 'ouvert' trouvé. Vous devez d'abord pointer votre arrivée.")
-        
-        # On vérifie quand même que le pointage n'est pas trop vieux (max 16h)
-        # pour éviter de fermer un pointage d'il y a 3 jours par erreur
-        if (datetime.now().date() - attendance.date).days > 1:
-             raise ValidationError("Votre dernier pointage est trop ancien. Veuillez contacter un administrateur.")
 
-        # 3. Mise à jour du pointage
+        if not attendance:
+            raise ValidationError("Aucun pointage d'arrivee 'ouvert' trouve. Vous devez d'abord pointer votre arrivee.")
+
+        if (datetime.now().date() - attendance.date).days > 1:
+            raise ValidationError("Votre dernier pointage est trop ancien. Veuillez contacter un administrateur.")
+
         now_time = datetime.now().time()
         attendance.heure_depart = now_time
         attendance.selfie_depart = selfie
-        
-        # Optionnel : Détecter si départ anticipé (par rapport au planning du pointage)
-        planning = Schedule.objects.filter(employee=employee, date=attendance.date).first()
-        if planning and now_time < planning.heure_fin:
-             # Si c'est un départ anticipé de plus de 15 min
-             # On utilise datetime.combine pour gérer la comparaison
-             current_dt = datetime.now()
-             planning_fin_dt = datetime.combine(attendance.date, planning.heure_fin)
-             
-             # Si le shift finit après minuit, on ajoute un jour à la date de fin du planning
-             if planning.heure_fin < planning.heure_debut:
-                 planning_fin_dt += timedelta(days=1)
-             
-             if current_dt < planning_fin_dt:
-                 diff = planning_fin_dt - current_dt
-                 if diff.total_seconds() > 900: # 15 minutes
-                     attendance.notes = (attendance.notes or "") + f" [Départ anticipé de {int(diff.total_seconds() // 60)} min]"
+
+        # Detection depart anticipe via le nouveau systeme ShiftSchedule
+        jour_semaine = JOURS_PYTHON_VERS_FR[attendance.date.weekday()]
+        shift = cls._get_shift_du_jour(employee, jour_semaine)
+
+        if shift and now_time < shift.heure_fin:
+            current_dt = datetime.now()
+            shift_fin_dt = datetime.combine(attendance.date, shift.heure_fin)
+
+            if shift.heure_fin < shift.heure_debut:
+                shift_fin_dt += timedelta(days=1)
+
+            if current_dt < shift_fin_dt:
+                diff = shift_fin_dt - current_dt
+                if diff.total_seconds() > 900:
+                    attendance.notes = (attendance.notes or "") + f" [Depart anticipe de {int(diff.total_seconds() // 60)} min]"
 
         attendance.save()
         return attendance
@@ -165,65 +172,51 @@ class AttendanceService:
     @classmethod
     def check_and_process_absences(cls):
         """
-        Vérifie les employés qui devaient commencer leur shift mais ne sont pas là.
-        Appelé régulièrement (ex: toutes les 30 minutes).
+        REGLE METIER (seuil 20h30) : verifie tous les employes qui
+        devaient travailler aujourd'hui (WeeklyAssignment != repos)
+        et qui n'ont TOUJOURS PAS pointe leur arrivee a 20h30.
+        Ceux-la sont marques absents automatiquement, et le
+        remplacement en chaine est declenche.
+
+        Appelee regulierement (ex: toutes les 30 minutes via un
+        scheduler/cron, ou manuellement par l'admin).
         """
-        today = datetime.now().date()
-        now_time = datetime.now().time()
-        
-        # 1. On cherche tous les plannings d'aujourd'hui
-        # où l'heure de début + 30 minutes de retard est déjà passée
-        # et qui ne sont pas des jours de repos
-        all_schedules = Schedule.objects.filter(
-            date=today
-        ).exclude(fonction='repos').select_related('employee')
+        now = datetime.now()
+        today = now.date()
+        jour_semaine = JOURS_PYTHON_VERS_FR[today.weekday()]
+
+        # On ne traite les absences qu'APRES l'heure limite (20h30)
+        if now.time() < HEURE_LIMITE_ABSENCE_AUTO:
+            return 0
+
+        # Toutes les affectations du jour, sauf repos
+        assignments_du_jour = WeeklyAssignment.objects.filter(
+            jour_semaine=jour_semaine
+        ).exclude(tache='repos').select_related('employee__user')
 
         processed_count = 0
-        
-        # Récupérer toutes les règles actives une seule fois pour optimiser
-        rules = list(AttendanceRule.objects.filter(is_active=True))
 
-        for planning in all_schedules:
-            # 1. Trouver la règle applicable (poste spécifique ou 'tout')
-            rule = next((r for r in rules if r.poste == planning.employee.poste), None)
-            if not rule:
-                rule = next((r for r in rules if r.poste == 'tout'), None)
-            
-            # 2. Déterminer l'heure limite
-            if rule and rule.absolute_limit_time:
-                # Heure fixe (ex: 16:30)
-                limit_dt = datetime.combine(today, rule.absolute_limit_time)
-            else:
-                # Délai relatif (ex: début + 30 min)
-                grace = rule.grace_period_minutes if rule else 30
-                limit_dt = datetime.combine(today, planning.heure_debut) + timedelta(minutes=grace)
-            
-            # 3. Vérifier si l'heure est passée
-            if datetime.now() > limit_dt:
-                # Vérifier si un pointage existe
-                has_attendance = Attendance.objects.filter(
-                    employee=planning.employee, 
-                    date=today
-                ).exists()
+        for assignment in assignments_du_jour:
+            employee = assignment.employee
 
-                if not has_attendance:
-                    # MARQUER ABSENT
-                    attendance = Attendance.objects.create(
-                        employee=planning.employee,
-                        date=today,
-                        statut='absent',
-                        notes=f"Absence auto (Règle: {rule.name if rule else 'Défaut'})"
-                    )
-                    
-                    # NOTIFIER LE MANAGER
-                    NotificationService.send_to_managers(
-                        title="Alerte Absence",
-                        message=f"{planning.employee.user.nom} est absent (Limite de {limit_dt.strftime('%H:%M')} dépassée).",
-                        type='absence'
-                    )
-                    
-                    # DÉCLENCHER LE REMPLACEMENT
-                    ReplacementService.trigger_replacement(planning.employee, today)
-                    processed_count += 1
-        
+            has_attendance = Attendance.objects.filter(employee=employee, date=today).exists()
+
+            if not has_attendance:
+                Attendance.objects.create(
+                    employee=employee,
+                    date=today,
+                    statut='absent',
+                    notes=f"Absence auto detectee a {HEURE_LIMITE_ABSENCE_AUTO.strftime('%H:%M')} (aucun pointage)."
+                )
+
+                NotificationService.send_to_managers(
+                    title="Alerte Absence",
+                    message=f"{employee.user.nom} est absent (aucun pointage avant {HEURE_LIMITE_ABSENCE_AUTO.strftime('%H:%M')}).",
+                    type='absence'
+                )
+
+                # Remplacement en chaine (jour+1, jour+2, ... cf schedules/services.py)
+                ReplacementService.trigger_replacement(employee, jour_semaine)
+                processed_count += 1
+
         return processed_count

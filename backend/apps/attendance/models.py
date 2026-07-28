@@ -1,8 +1,9 @@
+import uuid
 from django.db import models
+from django.utils import timezone
+# pyrefly: ignore [missing-import]
+from apps.employees.models import Employee
 
-<<<<<<< Updated upstream
-# Create your models here.
-=======
 # ===========================
 # CHOIX DE STATUTS DE POINTAGE
 # ===========================
@@ -75,7 +76,7 @@ class Attendance(models.Model):
         verbose_name="Employé"
     )
 
-    date = models.DateField(auto_now_add=True, verbose_name="Date")
+    date = models.DateField(default=timezone.now, verbose_name="Date")
     
     # ---------------------------
     # ARRIVÉE (Check-In)
@@ -137,4 +138,4 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"Pointage {self.employee.user.nom} - {self.date}"
->>>>>>> Stashed changes
+

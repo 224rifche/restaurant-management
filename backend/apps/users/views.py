@@ -59,7 +59,14 @@ class UserViewSet(BaseUserViewset):
         return UserReadSerializer
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        # Prevent privilege escalation
+        data = request.data.copy()
+        if not request.user.is_authenticated or request.user.role != 'admin':
+            # Anonymous users or non-admins cannot create 'admin' accounts
+            if data.get('role') == 'admin':
+                data['role'] = 'serveur' # Force safe default
+        
+        serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         read_serializer = UserReadSerializer(user)
@@ -72,6 +79,29 @@ class UserViewSet(BaseUserViewset):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return Response(UserReadSerializer(user).data, status=status.HTTP_200_OK)
+
+    def get_permissions(self):
+        """
+        Définit les permissions selon l'action.
+        """
+        if self.action == 'create':
+            return [permissions.AllowAny()]
+        if self.action == 'me':
+            return [permissions.IsAuthenticated()]
+        return [IsAdminUser()]
+
+    @action(
+        detail=False,
+        methods=['get'],
+        permission_classes=[permissions.IsAuthenticated],
+        url_path='me'
+    )
+    def me(self, request):
+        """
+        Retourne le profil de l'utilisateur connecté.
+        """
+        serializer = UserReadSerializer(request.user)
+        return Response(serializer.data)
 
     @extend_schema(
         tags=["Users"],

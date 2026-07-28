@@ -1,14 +1,34 @@
+from datetime import datetime
 from django.shortcuts import render
+from rest_framework import status, permissions, filters
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema, extend_schema_view
+from django.core.exceptions import ValidationError
 
-<<<<<<< Updated upstream
-# Create your views here.
-=======
 # pyrefly: ignore [missing-import]
 from apps.users.api_base import BaseViewSet
 from .models import Attendance, AttendanceRule
-from .serializers import AttendanceReadSerializer, CheckInSerializer, CheckOutSerializer, AttendanceRuleSerializer
+from .serializers import (
+    AttendanceReadSerializer, 
+    CheckInSerializer, 
+    CheckOutSerializer, 
+    AttendanceRuleSerializer
+)
 from .analytics import AttendanceAnalytics
 from .services import AttendanceService
+
+
+class IsAdminOnly(permissions.BasePermission):
+    """
+    Permission pour les administrateurs uniquement basée sur le rôle.
+    """
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated
+            and request.user.role == 'admin'
+        )
+
 
 @extend_schema_view(
     list=extend_schema(tags=["Pointage"], summary="Liste des pointages"),
@@ -18,8 +38,26 @@ class AttendanceViewSet(BaseViewSet):
     """
     ViewSet pour la gestion des pointages.
     """
-    queryset = Attendance.objects.all().select_related('employee__user')
     serializer_class = AttendanceReadSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['employee__user__nom', 'statut']
+
+    def get_queryset(self):
+        """
+        Restreint les donnees visibles SELON LE ROLE de l'utilisateur connecte.
+        """
+        if getattr(self, "swagger_fake_view", False):
+            return Attendance.objects.none()
+
+        queryset = Attendance.objects.all().select_related('employee__user')
+        user = self.request.user
+
+        # Admin et Caissier voient TOUT (supervision)
+        # Serveur et Cuisine ne voient QUE leurs propres pointages
+        if user.role in ['serveur', 'cuisine']:
+            queryset = queryset.filter(employee__user=user)
+
+        return queryset
 
     # ---------------------------
     # ACTION : POINTAGE ARRIVÉE
@@ -100,7 +138,7 @@ class AttendanceViewSet(BaseViewSet):
         tags=["Pointage"],
         summary="Détecter les absents et lancer les remplacements (Action Admin)",
     )
-    @action(detail=False, methods=['post'], url_path='process-absences', permission_classes=[permissions.IsAdminUser])
+    @action(detail=False, methods=['post'], url_path='process-absences', permission_classes=[IsAdminOnly])
     def process_absences(self, request):
         count = AttendanceService.check_and_process_absences()
         return Response({
@@ -115,7 +153,7 @@ class AttendanceViewSet(BaseViewSet):
         tags=["Analytics"],
         summary="Statistiques globales du jour pour le dashboard",
     )
-    @action(detail=False, methods=['get'], url_path='dashboard', permission_classes=[permissions.IsAdminUser])
+    @action(detail=False, methods=['get'], url_path='dashboard', permission_classes=[IsAdminOnly])
     def dashboard(self, request):
         stats = AttendanceAnalytics.get_global_dashboard_stats()
         return Response(stats, status=status.HTTP_200_OK)
@@ -127,7 +165,7 @@ class AttendanceViewSet(BaseViewSet):
         tags=["Analytics"],
         summary="Rapport complet d'un employé sur une période",
     )
-    @action(detail=False, methods=['get'], url_path='employee-report', permission_classes=[permissions.IsAdminUser])
+    @action(detail=False, methods=['get'], url_path='employee-report', permission_classes=[IsAdminOnly])
     def employee_report(self, request):
         emp_id = request.query_params.get('employee_id')
         start_date = request.query_params.get('start_date')
@@ -157,7 +195,5 @@ class AttendanceRuleViewSet(BaseViewSet):
     """
     queryset = AttendanceRule.objects.all()
     serializer_class = AttendanceRuleSerializer
-    permission_classes = [permissions.IsAdminUser] # Seul l'admin y a accès
+    permission_classes = [IsAdminOnly] # Seul l'admin y a accès
 
-from datetime import datetime # Import nécessaire pour get_qr_token
->>>>>>> Stashed changes

@@ -19,6 +19,11 @@ class ExpenseViewSet(BaseViewSet):
     Gestion des factures fournisseurs et dépenses quotidiennes.
     Seul le Caissier ou l'Admin peut créer/valider.
     """
+    # Ajout du moteur de recherche
+    from rest_framework import filters
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['title', 'issuer_name', 'recipient_name']
+
     queryset = Expense.objects.all().select_related('created_by', 'validated_by')
     serializer_class = ExpenseSerializer
 

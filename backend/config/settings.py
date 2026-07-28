@@ -28,7 +28,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 # False en prod (cache les erreurs - securite)
 # cast=bool convertit la string "True" en booleen Python True
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
 # Liste des domaines autorises a servir cette app
 # En dev : localhost et 127.0.0.1
 # En prod : ton-domaine.com
@@ -230,8 +230,8 @@ SPECTACULAR_SETTINGS = {
 # ===========================
 # CORS
 # ===========================
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000').split(',')
-# Liste des origines autorisees a appeler notre API
+CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)
+# Autorise toutes les origines pour permettre la connexion depuis des téléphones ou d'autres navigateurs
 # En dev : seulement le frontend local
 # En prod : ton domaine de production
 
@@ -273,4 +273,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ===========================
 RESTAURANT_LATITUDE = 9.509167  # Exemple : Conakry
 RESTAURANT_LONGITUDE = -13.712222
-POINTAGE_MAX_DISTANCE_METERS = 100 # Rayon autoris autour du restaurant
+POINTAGE_MAX_DISTANCE_METERS = config('POINTAGE_MAX_DISTANCE_METERS', default=100, cast=int)
+# Rayon autorise autour du restaurant (en metres). Configurable via .env
+# pour pouvoir tester en developpement depuis n'importe ou (valeur tres grande)
+# sans jamais toucher au code -- seule la config change entre dev et prod.
