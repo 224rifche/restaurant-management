@@ -1,4 +1,4 @@
-﻿from rest_framework import permissions, status
+from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, extend_schema_view
@@ -39,6 +39,67 @@ class ShiftScheduleViewSet(BaseViewSet):
     queryset = ShiftSchedule.objects.all()
     serializer_class = ShiftScheduleSerializer
     permission_classes = [IsAdminOnly]
+    pagination_class = None
+
+    @extend_schema(
+        tags=["Horaires"],
+        summary="Creer un horaire sur PLUSIEURS jours d'un coup",
+        description="Evite de repeter le formulaire jour par jour : on donne les horaires UNE FOIS et la liste des jours concernes, le systeme cree une ligne par jour.",
+    )
+    @action(detail=False, methods=['post'], url_path='bulk-create')
+    def bulk_create(self, request):
+        """
+        Attend un payload du type :
+        {
+            "poste": "serveur",
+            "nom_equipe": "Matin",
+            "heure_debut": "08:00",
+            "heure_fin": "16:00",
+            "tolerance_retard_minutes": 10,
+            "is_active": true,
+            "jours": ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
+        }
+        Cree UNE ligne ShiftSchedule par jour de la liste "jours".
+        Si une ligne existe deja pour un jour donne (meme poste + meme
+        nom_equipe + meme jour), elle est mise a jour au lieu d'etre dupliquee.
+        """
+        jours = request.data.get('jours', [])
+        if not jours:
+            return Response(
+                {"detail": "Aucun jour selectionne."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        donnees_communes = {
+            'poste': request.data.get('poste'),
+            # Normalisation du nom : minuscules + suppression espaces superflus
+            # Evite les doublons "soir1" / "Soir1" / "soir 1" qui sont le meme groupe
+            'nom_equipe': ' '.join(request.data.get('nom_equipe', '').strip().lower().split()),
+            'heure_debut': request.data.get('heure_debut'),
+            'heure_fin': request.data.get('heure_fin'),
+            'tolerance_retard_minutes': request.data.get('tolerance_retard_minutes', 10),
+            'is_active': request.data.get('is_active', True),
+        }
+
+        crees = []
+        for jour in jours:
+            obj, _ = ShiftSchedule.objects.update_or_create(
+                poste=donnees_communes['poste'],
+                nom_equipe=donnees_communes['nom_equipe'],
+                jour_semaine=jour,
+                defaults={
+                    'heure_debut': donnees_communes['heure_debut'],
+                    'heure_fin': donnees_communes['heure_fin'],
+                    'tolerance_retard_minutes': donnees_communes['tolerance_retard_minutes'],
+                    'is_active': donnees_communes['is_active'],
+                }
+            )
+            crees.append(obj)
+
+        return Response(
+            ShiftScheduleSerializer(crees, many=True).data,
+            status=status.HTTP_201_CREATED
+        )
 
 
 # ===================================================

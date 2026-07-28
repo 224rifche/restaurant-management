@@ -38,10 +38,26 @@ class AttendanceViewSet(BaseViewSet):
     """
     ViewSet pour la gestion des pointages.
     """
-    queryset = Attendance.objects.all().select_related('employee__user')
     serializer_class = AttendanceReadSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['employee__user__nom', 'statut']
+
+    def get_queryset(self):
+        """
+        Restreint les donnees visibles SELON LE ROLE de l'utilisateur connecte.
+        """
+        if getattr(self, "swagger_fake_view", False):
+            return Attendance.objects.none()
+
+        queryset = Attendance.objects.all().select_related('employee__user')
+        user = self.request.user
+
+        # Admin et Caissier voient TOUT (supervision)
+        # Serveur et Cuisine ne voient QUE leurs propres pointages
+        if user.role in ['serveur', 'cuisine']:
+            queryset = queryset.filter(employee__user=user)
+
+        return queryset
 
     # ---------------------------
     # ACTION : POINTAGE ARRIVÉE
